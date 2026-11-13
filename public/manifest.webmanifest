@@ -1,6 +1,6 @@
 {
-  "name": "TriDex · Pokédex 中/EN/ES",
-  "short_name": "TriDex",
+  "name": "PokeAll · Pokédex 中/EN/ES",
+  "short_name": "PokeAll",
   "description": "Pokédex en chino, inglés y español: Pokémon, evoluciones, habilidades, objetos y movimientos.",
   "start_url": "./",
   "scope": "./",

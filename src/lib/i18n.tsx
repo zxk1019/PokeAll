@@ -4,7 +4,7 @@ import type { L, Lang } from './data';
 import { getStored, useStored } from './storage';
 
 const es = {
-  appName: 'TriDex',
+  appName: 'PokeAll',
   tagline: 'Pokédex en chino, inglés y español',
   'nav.home': 'Inicio',
   'nav.pokedex': 'Pokédex',
@@ -270,7 +270,7 @@ const es = {
 export type Key = keyof typeof es;
 
 const en: Record<Key, string> = {
-  appName: 'TriDex',
+  appName: 'PokeAll',
   tagline: 'Pokédex in Chinese, English and Spanish',
   'nav.home': 'Home',
   'nav.pokedex': 'Pokédex',
@@ -534,7 +534,7 @@ const en: Record<Key, string> = {
 };
 
 const zh: Record<Key, string> = {
-  appName: 'TriDex',
+  appName: 'PokeAll',
   tagline: '中英西三语宝可梦图鉴',
   'nav.home': '首页',
   'nav.pokedex': '图鉴',

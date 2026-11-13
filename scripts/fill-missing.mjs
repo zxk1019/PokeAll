@@ -22,7 +22,7 @@ const FORCE = process.argv.includes('--force');
 const ONLY = process.argv.find(a => a.startsWith('--only='))?.slice(7).split(',');
 const run = lang => !ONLY || ONLY.includes(lang);
 // User-Agent genérico (sin datos personales), como piden las wikis a los scripts
-const HEADERS = { 'User-Agent': 'TriDex-data-script/0.1 (non-commercial fan project)' };
+const HEADERS = { 'User-Agent': 'PokeAll-data-script/0.1 (non-commercial fan project)' };
 const API = { w52: 'https://wiki.52poke.com/api.php', wdx: 'https://www.wikidex.net/api.php' };
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));

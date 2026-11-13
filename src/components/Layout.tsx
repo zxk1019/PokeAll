@@ -48,7 +48,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="topbar-inner">
           <Link to="/" className="logo" aria-label={t('nav.home')}>
             <span className="logo-ball" aria-hidden />
-            <span className="logo-text">TriDex</span>
+            <span className="logo-text">PokeAll</span>
           </Link>
           <SearchBox shortcut />
           <div className="topbar-actions">

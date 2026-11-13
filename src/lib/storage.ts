@@ -2,6 +2,7 @@
 // Todo va con try/catch porque en modo incógnito o con cookies bloqueadas localStorage puede fallar.
 import { useSyncExternalStore } from 'react';
 
+// Se queda con el nombre antiguo (TriDex) para no perder favoritos y equipos guardados en el navegador.
 const PREFIX = 'tridex:';
 const listeners = new Set<() => void>();
 const memory = new Map<string, string>(); // por si localStorage no funciona

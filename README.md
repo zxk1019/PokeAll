@@ -1,8 +1,8 @@
-# TriDex · Pokédex en 中 / EN / ES
+# PokeAll · Pokédex en 中 / EN / ES
 
 Web de información Pokémon en chino (simplificado), inglés y español. Se puede instalar en el móvil como una app (PWA) y funciona sin internet una vez abierta.
 
-**Web: https://zxk1019.github.io/Tridex/**
+**Web: https://zxk1019.github.io/PokeAll/**
 
 ## Qué tiene
 

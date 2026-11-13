@@ -60,7 +60,7 @@ export default function App() {
 
   // Al cambiar de página, volver arriba
   useEffect(() => { window.scrollTo(0, 0); }, [path]);
-  useEffect(() => { document.title = 'TriDex · ' + t('tagline'); }, [t]);
+  useEffect(() => { document.title = 'PokeAll · ' + t('tagline'); }, [t]);
 
   return (
     <Layout>
