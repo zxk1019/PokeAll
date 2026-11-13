@@ -1,0 +1,14 @@
+{
+  "name": "TriDex · Pokédex 中/EN/ES",
+  "short_name": "TriDex",
+  "description": "Pokédex en chino, inglés y español: Pokémon, evoluciones, habilidades, objetos y movimientos.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f5f7",
+  "theme_color": "#d63b3b",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

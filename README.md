@@ -1,0 +1,119 @@
+# TriDex · Pokédex en 中 / EN / ES
+
+Web de información Pokémon en chino (simplificado), inglés y español. Se puede instalar en el móvil como una app (PWA) y funciona sin internet una vez abierta.
+
+## Qué tiene
+
+- **Pokédex**: las 1025 especies y sus formas (Mega, Gigamax, regionales…), con filtros por generación, tipo y categoría y orden por estadísticas.
+- **Ficha de cada Pokémon**: nombres en los 3 idiomas (con pinyin), descripción, datos, habilidades, estadísticas, debilidades, árbol de evolución con sus condiciones, movimientos que aprende, objetos que lleva en estado salvaje, versión variocolor y su grito.
+- **Objetos**: lo que hace cada uno, a quién hace evolucionar, qué movimiento enseña cada MT y quién lo lleva en estado salvaje.
+- **Habilidades**: incluidas las **exclusivas** (de un solo Pokémon o de una sola línea evolutiva), separando las normales de las ocultas.
+- **Movimientos**: tipo, clase, potencia, precisión, PP y qué Pokémon los aprenden.
+- **Tipos**: tabla de tipos y calculadora de debilidades para uno o dos tipos.
+- **Naturalezas**: qué estadística sube y cuál baja, y qué sabores le gustan.
+- **Traductor**: escribe cualquier nombre y te lo da en los 3 idiomas (con botón de copiar).
+- **Comparar**: hasta 4 Pokémon lado a lado.
+- **Equipo**: 6 Pokémon con su cobertura defensiva y ofensiva; se puede compartir con un enlace.
+- **¿Quién es ese Pokémon?**: adivinar por la silueta, contestando en cualquier idioma o en pinyin.
+- **Favoritos**, modo claro/oscuro y buscador global.
+
+El buscador encuentra cosas en cualquier idioma, sin tildes, en pinyin (`pikaqiu` o `pkq`), por número (`#25`) y con erratas leves (`charmandr`).
+
+## Cómo arrancarlo
+
+Hace falta [Node.js](https://nodejs.org) 20 o más nuevo.
+
+```bash
+npm install
+npm run dev
+```
+
+Y abrir http://localhost:5173
+
+## Datos
+
+Los datos salen de [PokeAPI](https://github.com/PokeAPI/pokeapi) (sus CSV). Ya están generados en `public/data/`, así que no hace falta hacer nada. Para actualizarlos cuando salga un juego nuevo:
+
+```bash
+npm run data
+```
+
+Ese comando hace dos cosas:
+
+1. `scripts/download-data.mjs` descarga los CSV a `data-raw/` (no se sube a git).
+2. `scripts/build-data.mjs` los convierte en JSON pequeños: escoge los textos más recientes de cada idioma, monta los árboles de evolución, calcula las habilidades exclusivas y crea el índice del buscador con el pinyin.
+
+Al final te dice cuántos textos faltan. Si algo no está en tu idioma, la web lo enseña en otro y lo avisa.
+
+### Textos que no están en PokeAPI
+
+PokeAPI no trae muchas descripciones de los juegos nuevos (sobre todo de Escarlata/Púrpura y Leyendas Z-A) en chino ni en español, y algunos objetos ni en inglés. Tampoco algunos nombres: formas (las megaevoluciones nuevas, los Pikachu disfrazados de ROZA…), lugares y regiones. Todo eso lo saca `scripts/fill-missing.mjs` de otras webs:
+
+| Idioma | Web | Licencia |
+| --- | --- | --- |
+| Chino | [52poké Wiki](https://wiki.52poke.com) y, si no está, la [web oficial china](https://www.pokemon.cn) | CC BY-NC-SA 3.0 |
+| Español | [WikiDex](https://www.wikidex.net) y, si no está, [Pokéos](https://www.pokeos.com) y la [Pokédex oficial](https://www.pokemon.com/es/pokedex) | CC BY-NC-SA 3.0 |
+| Inglés | [Pokémon Database](https://pokemondb.net) y [Serebii](https://www.serebii.net) | — |
+
+Solo se usan textos y nombres oficiales de los juegos. No se usan filtraciones, ni traducciones hechas por las wikis (en chino solo cuentan los juegos que salieron en chino, desde Sol/Luna), ni textos deducidos. Lo que nunca salió en un juego en chino no está en la web: 39 objetos de la 3.ª y 4.ª generación (cartas, Pase Tri, MO08...) y la región de Orre. Si algo aún no es oficial, como las habilidades de algunas megaevoluciones nuevas, la web lo dice en vez de inventárselo.
+
+Lo que encuentra se guarda en `data-extra/texts.json` (este sí se sube a git) y `build-data.mjs` lo usa solo para rellenar huecos: lo que trae PokeAPI siempre gana. En la web, debajo de esos textos sale de qué página vienen.
+
+```bash
+npm run data:extra             # busca solo lo que falta y vuelve a generar los JSON
+npm run data:extra -- --force  # lo vuelve a buscar todo
+```
+
+Tarda unos minutos porque espera entre peticiones para no cargar las webs (Pokémon Database pide 2 segundos).
+
+Después de actualizar los datos, cambia `VERSION` en `public/sw.js` para que los móviles que ya tienen la app descarguen los nuevos.
+
+## Tecnología
+
+| Parte | Qué uso | Por qué |
+| --- | --- | --- |
+| Frontend | React 19 + TypeScript + Vite | Lo más usado ahora mismo, arranca rápido y TypeScript avisa de los errores al escribir. |
+| Router | Uno propio con `#` (`src/lib/router.tsx`) | Funciona en cualquier hosting gratuito sin configurar nada. |
+| Estilos | CSS normal con variables (`src/styles.css`) | Sin librerías; modo oscuro con las mismas variables. |
+| Buscador | Propio (`src/lib/search.ts`) | Para que entienda pinyin, chino, tildes y erratas a la vez. |
+| "Backend" | Script de Node que genera los JSON | Los datos de Pokémon casi no cambian, así que no hace falta un servidor: la web es estática, rápida y gratis de publicar. |
+| Sin internet | Service worker propio (`public/sw.js`) | Guarda la web, los datos y las imágenes. |
+| Guardado | `localStorage` | Favoritos, equipo, idioma, tema y récord del quiz. |
+
+### ¿Y si me piden un backend de verdad?
+
+La web no lo necesita, pero si en clase piden servidor y base de datos, lo más lógico es añadirlo solo para lo que cambia por usuario: **cuentas, favoritos y equipos guardados en la nube**. Opciones:
+
+- **Node + Express + PostgreSQL/MySQL**: mismo lenguaje que el frontend.
+- **PHP + Laravel + MySQL**: si en clase dais PHP. Se pueden importar los mismos JSON de `public/data/` a tablas.
+- **Supabase**: base de datos y login ya hechos, casi sin código de servidor.
+
+## Publicarla
+
+```bash
+npm run build
+```
+
+Sube la carpeta `dist/` a GitHub Pages, Netlify, Vercel o Cloudflare Pages. Como usa rutas relativas y `#`, funciona en cualquier carpeta.
+
+## Estructura
+
+```
+scripts/            descarga y conversión de datos
+data-extra/         textos sacados de otras webs (los que faltan en PokeAPI)
+public/data/        JSON generados (los usa la web)
+public/sw.js        service worker (modo sin internet)
+src/lib/            datos, buscador, idiomas, router, guardado
+src/components/     piezas reutilizables (cabecera, buscador, evolución…)
+src/pages/          una página por sección
+```
+
+## Ideas para más adelante
+
+- Dónde capturar cada Pokémon en cada juego (PokeAPI tiene `encounters.csv`, pero son muchos datos y cambian por juego).
+- Calculadora de daño.
+- Más idiomas (los CSV ya traen japonés, coreano, francés, alemán e italiano).
+
+## Aviso
+
+Proyecto fan sin ánimo de lucro. Pokémon y sus nombres © Nintendo, Creatures Inc. y GAME FREAK. Las imágenes y los gritos se cargan del repositorio de PokeAPI. Los textos que faltaban en PokeAPI salen de 52poké Wiki y WikiDex (CC BY-NC-SA 3.0, por eso el proyecto tiene que seguir siendo sin ánimo de lucro), Pokémon Database y Serebii.
