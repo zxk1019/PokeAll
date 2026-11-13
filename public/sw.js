@@ -1,6 +1,6 @@
 // Service worker: guarda la web, los datos y las imágenes para que funcione sin internet.
-// Cambia VERSION cuando actualices los datos para que los móviles descarguen lo nuevo.
-const VERSION = 'v2';
+// VERSION la pone el build (vite.config.ts) con un hash de los datos y la web: si algo cambia, los móviles descargan lo nuevo.
+const VERSION = '__BUILD_VERSION__';
 const CORE = `tridex-core-${VERSION}`;
 const IMAGES = 'tridex-images';
 const MAX_IMAGES = 2500;

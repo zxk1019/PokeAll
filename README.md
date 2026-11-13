@@ -2,6 +2,8 @@
 
 Web de información Pokémon en chino (simplificado), inglés y español. Se puede instalar en el móvil como una app (PWA) y funciona sin internet una vez abierta.
 
+**Web: https://zxk1019.github.io/Tridex/**
+
 ## Qué tiene
 
 - **Pokédex**: las 1025 especies y sus formas (Mega, Gigamax, regionales…), con filtros por generación, tipo y categoría y orden por estadísticas.
@@ -66,7 +68,7 @@ npm run data:extra -- --force  # lo vuelve a buscar todo
 
 Tarda unos minutos porque espera entre peticiones para no cargar las webs (Pokémon Database pide 2 segundos).
 
-Después de actualizar los datos, cambia `VERSION` en `public/sw.js` para que los móviles que ya tienen la app descarguen los nuevos.
+No hace falta tocar nada para que los móviles que ya tienen la app descarguen los datos nuevos: `npm run build` pone en `dist/sw.js` una versión sacada de los datos y la web (`scripts/sw-version.mjs`), y cuando algo cambia, la caché vieja se borra sola.
 
 ## Tecnología
 
