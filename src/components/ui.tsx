@@ -122,6 +122,7 @@ export const SOURCES: Record<Source, { name: string; url: string; cc?: true }> =
   ser: { name: 'Serebii', url: 'https://www.serebii.net' },
   pcn: { name: '宝可梦中国官网', url: 'https://www.pokemon.cn' },
   pos: { name: 'Pokéos', url: 'https://www.pokeos.com' },
+  api: { name: 'PokeAPI', url: 'https://pokeapi.co' },
 };
 
 export function Desc({ text, src }: { text: L | undefined; src?: Src }) {

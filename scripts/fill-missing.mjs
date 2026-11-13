@@ -146,6 +146,11 @@ function hans(s) {
 }
 
 /** Quita el formato wiki y deja solo el texto. */
+/** Entidades HTML a texto: &#8260; (la barra de las fracciones), &#160;, &eacute;... */
+const NAMED = { amp: '&', quot: '"', apos: "'", nbsp: ' ', lt: '<', gt: '>', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', eacute: 'é', mdash: '—', ndash: '–', hellip: '…', times: '×' };
+const entities = s => s.replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(+d)).replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+  .replace(/&([a-z]+);/gi, (m, k) => NAMED[k.toLowerCase()] ?? m).replace(/​/g, '').replace(/⁄/g, '/').replace(/ /g, ' ');
+
 function plain(s, lang) {
   if (!s) return '';
   // Varias formas separadas por <hr> ("texto.（超级进化）"): nos quedamos con la primera
@@ -166,10 +171,9 @@ function plain(s, lang) {
   s = s.replace(/\[\[(?:File|Archivo|Imagen|Image|文件|图像):[^\]]*\]\]/gi, '');
   // WikiDex pone los dos nombres en los enlaces: [[Poké Ball|Pokébola/Poké Ball]] -> el de España (el segundo)
   // (o dos enlaces seguidos: [[Tipo pelea|Tipo Pelea]]/[[Tipo lucha|Tipo Lucha]])
-  if (lang === 'es') s = s.replace(/\[\[([^\]|]*\|)?([^\]/]+)\/([^\]/]+)\]\]/g, '$3').replace(/\[\[[^\]]*\]\]\/(\[\[[^\]]*\]\])/g, '$1');
-  s = s.replace(/\[\[[^\]|]*\|([^\]]*)\]\]/g, '$1').replace(/\[\[([^\]]*)\]\]/g, '$1')
-    .replace(/'{2,}/g, '')
-    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#8203;/g, '').replace(/&[mn]dash;/g, '—')
+  // ([[Pokémon brillante/Pokémon variocolor|Variocolor]] no es de esos: el texto va tras el |)
+  if (lang === 'es') s = s.replace(/\[\[([^\]|]*\|)?([^\]/|]+)\/([^\]/|]+)\]\]/g, '$3').replace(/\[\[[^\]]*\]\]\/(\[\[[^\]]*\]\])/g, '$1');
+  s = entities(s.replace(/\[\[[^\]|]*\|([^\]]*)\]\]/g, '$1').replace(/\[\[([^\]]*)\]\]/g, '$1').replace(/'{2,}/g, ''))
     .replace(/\s+/g, ' ').trim();
   if (lang === 'zh') {
     s = s.replace(/ ?([，。！？：；、（）「」]) ?/g, '$1')
@@ -178,6 +182,68 @@ function plain(s, lang) {
   }
   return s;
 }
+
+/** Efecto detallado de una habilidad: la sección "==<título>==" de la wiki, en líneas de texto.
+ *  Las subsecciones === === se quedan solo si su título cumple `keep` (En combate / Fuera de combate);
+ *  las más profundas (==== listas de objetos ====), las tablas y las galerías no.
+ *  Formato de cada línea: "# título", "## etiqueta" (;Tercera generación), "• punto" o un párrafo. */
+function effectLines(page, title, keep, lang) {
+  const at = (page ?? '').search(new RegExp(`^==\\s*(?:${title})\\s*==\\s*$`, 'm'));
+  if (at < 0) return '';
+  let sec = page.slice(page.indexOf('\n', at) + 1);
+  const end = sec.search(/^==[^=]/m);
+  if (end >= 0) sec = sec.slice(0, end);
+  for (let k = 0; k < 5; k++) sec = sec.replace(/\{\|(?:(?!\{\|)[\s\S])*?\n\|\}/g, ''); // tablas (de dentro afuera)
+  sec = sec.replace(/<gallery[\s\S]*?<\/gallery>/gi, '').replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\{\{\s*gen\s*\|\s*([^{}|]+)\}\}/gi, lang === 'zh' ? '第$1世代' : '$1');
+  const out = [];
+  let skip = false;
+  for (const raw of sec.split('\n')) {
+    const line = raw.trim();
+    const h = line.match(/^(={3,6})\s*(.+?)\s*\1$/);
+    if (h) {
+      const name = plain(h[2], lang);
+      skip = h[1].length > 3 || !keep.test(name);
+      if (!skip) out.push('# ' + name);
+      continue;
+    }
+    if (skip || !line) continue;
+    let m;
+    if ((m = line.match(/^;\s*(.*)$/))) { const t = plain(m[1], lang); if (t) out.push('## ' + t); }
+    else if ((m = line.match(/^[*#]+\s*(.*)$/))) { const t = plain(m[1], lang); if (t) out.push('• ' + t); }
+    else { const t = plain(line.replace(/^:+\s*/, ''), lang); if (t && !/^\{\||^\|/.test(line)) out.push(t); }
+  }
+  // un título sin nada debajo no sirve
+  return out.filter((l, i) => !(l.startsWith('# ') && (!out[i + 1] || out[i + 1].startsWith('# ')))).join('\n');
+}
+/** Lo mismo desde el HTML ya renderizado: lo que hay entre `start` (dónde empieza la sección) y el siguiente <h2>.
+ *  Los <h3> que cumplen `keep` pasan a "# título"; lo de los demás <h3> y de los <h4>… se salta, y las tablas también. */
+function htmlEffectLines(html, start, keep) {
+  const at = (html ?? '').indexOf(start);
+  if (at < 0) return '';
+  let sec = html.slice(at + start.length);
+  sec = sec.slice(sec.indexOf('>') + 1);
+  const end = sec.search(/<h2[\s>]/);
+  if (end >= 0) sec = sec.slice(0, end);
+  for (let k = 0; k < 5; k++) sec = sec.replace(/<table(?:(?!<table)[\s\S])*?<\/table>/g, '');
+  // fuera los <style> de las plantillas y las notas [1]; los otros <sup>/<sub> son las fracciones (¹⁄₄)
+  sec = sec.replace(/<style[\s\S]*?<\/style>/g, '');
+  const text = s => entities(s.replace(/<sup[^>]*class="[^"]*reference[\s\S]*?<\/sup>/g, '').replace(/<[^>]*>/g, ''))
+    .replace(/\s+/g, ' ').replace(/ ?([，。！？：；、（）]) ?/g, '$1').trim();
+  const out = [];
+  let skip = false;
+  for (const m of sec.matchAll(/<(h[3-6]|p|li|dt|dd)[^>]*>([\s\S]*?)<\/\1>/g)) {
+    const [, tag, inner] = m;
+    const t = text(inner);
+    if (tag[0] === 'h') {
+      skip = tag !== 'h3' || !keep.test(t);
+      if (!skip) out.push('# ' + t);
+    } else if (!skip && t && !/^(主页面|主条目|参见|另见|Main article|See also)[:：]/i.test(t)) out.push((tag === 'li' ? '• ' : tag === 'dt' ? '## ' : '') + t);
+  }
+  return out.filter((l, i) => !(l.startsWith('# ') && (!out[i + 1] || out[i + 1].startsWith('# ')))).join('\n');
+}
+// Habilidades a las que aún les falta el efecto detallado en un idioma (no sale en public/data, va aparte)
+const effectTodo = lang => KINDS.a.filter(a => FORCE || !cache[`a:${a.id}:e:${lang}`]);
 
 /** Filas de una tabla wiki: cada fila es una lista de celdas (texto crudo). */
 function tableRows(text) {
@@ -413,6 +479,26 @@ if (run('zh')) {
     }
     if (list.length) report('lugares', list, 'l', 'zh', 'n');
   }
+
+  // Efecto detallado de las habilidades: sección 特性效果 de "<nombre>（特性）" (lo escribe la wiki, no es texto del juego).
+  // Se lee la página renderizada en /zh-hans/: así salen las plantillas ({{特性效果/发动天气|下雨}}) y todo en simplificado.
+  {
+    const list = effectTodo('zh').filter(a => a.n.zh);
+    if (list.length) console.log(`  (efecto de ${list.length} habilidades, unos ${Math.ceil(list.length * 1.3 / 60)} min)`);
+    for (const a of list) {
+      let text = '';
+      for (const title of [a.n.zh + '（特性）', a.n.zh]) {
+        const html = await get('https://wiki.52poke.com/zh-hans/' + encodeURIComponent(title));
+        await sleep(1000);
+        // casi todas usan "特性效果"; alguna nueva (黄金之躯) usa "游戏中"
+        text = htmlEffectLines(html, 'id="特性效果"', /^(对战中|对战外)$/) || htmlEffectLines(html, 'id="游戏中"', /^(对战中|对战外)$/);
+        if (text) break;
+      }
+      put(`a:${a.id}:e:zh`, text, 'w52');
+      miss('a', 'zh', a, 'e');
+    }
+    if (list.length) report('efecto de habilidades', list, 'a', 'zh', 'e');
+  }
   await saveCache();
 }
 
@@ -575,14 +661,29 @@ if (run('es')) {
     report('pokémon', [...needD], 's', 'es');
     if (needG.size) report('categoría de pokémon', [...needG], 's', 'es', 'g');
   }
+
+  // Efecto detallado de las habilidades: sección "== Efecto ==" de su página (o "<nombre> (habilidad)")
+  {
+    const list = effectTodo('es').filter(a => a.n.es);
+    if (list.length) {
+      // a veces el título va en minúscula ("Lodo líquido" y no "Lodo Líquido")
+      const titles = a => [a.n.es + ' (habilidad)', a.n.es, a.n.es[0] + a.n.es.slice(1).toLowerCase()];
+      const pages = await wikiPages(API.wdx, list.flatMap(titles));
+      for (const a of list) {
+        const page = titles(a).map(t => pages.get(t)).find(p => /^==\s*Efecto\s*==/m.test(p ?? ''));
+        put(`a:${a.id}:e:es`, effectLines(page, 'Efecto', /^(En combate|Fuera de combate)$/i, 'es'), 'wdx');
+        miss('a', 'es', a, 'e');
+      }
+      report('efecto de habilidades', list, 'a', 'es', 'e');
+    }
+  }
   await saveCache();
 }
 
 // ---------- inglés: Pokémon Database y Serebii ----------
 if (run('en')) {
   console.log('\nInglés (Pokémon Database / Serebii)...');
-  const decode = s => s.replace(/<[^>]*>/g, '').replace(/&#8203;/g, '').replace(/&amp;/g, '&').replace(/&#39;|&rsquo;/g, "'")
-    .replace(/&quot;/g, '"').replace(/&eacute;/g, 'é').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  const decode = s => entities(s.replace(/<[^>]*>/g, '')).replace(/’/g, "'").replace(/\s+/g, ' ').trim();
   /** Texto más reciente de la tabla "Game descriptions" de pokemondb.net (o el de un juego concreto) */
   const pokemondb = async (path, game) => {
     const html = await get('https://pokemondb.net/' + path);
@@ -629,6 +730,28 @@ if (run('en')) {
   // los movimientos Z salen dos veces en PokeAPI (breakneck-blitz--physical / --special)
   for (const m of mv) { put(`m:${m.id}:d:en`, await pokemondb('move/' + m.slug.replace(/--(physical|special)$/, '')), 'pdb'); miss('m', 'en', m); }
   report('movimientos', mv, 'm', 'en');
+
+  // Efecto detallado de las habilidades: sección "Effect" de pokemondb.net/ability/<slug>
+  // (si no está, build-data usa el "effect" de PokeAPI, que es más viejo)
+  const ab = effectTodo('en');
+  if (ab.length) console.log(`  (efecto de ${ab.length} habilidades, unos ${Math.ceil(ab.length * 2.3 / 60)} min)`);
+  n = 0;
+  for (const a of ab) {
+    const html = await get('https://pokemondb.net/ability/' + a.slug);
+    await sleep(2000);
+    const at = html?.indexOf('>Effect</h2>') ?? -1;
+    let lines = [];
+    if (at >= 0) {
+      const sec = html.slice(at + 12, html.indexOf('<h2', at + 12));
+      lines = [...sec.matchAll(/<(h3|p|li)[^>]*>([\s\S]*?)<\/\1>/g)]
+        .map(m => ({ tag: m[1], text: decode(m[2]) })).filter(x => x.text)
+        .map(x => (x.tag === 'h3' ? '# ' : x.tag === 'li' ? '• ' : '') + x.text);
+    }
+    put(`a:${a.id}:e:en`, lines.join('\n'), 'pdb');
+    miss('a', 'en', a, 'e');
+    if (++n % 25 === 0) { await saveCache(); console.log(`  ... ${n}/${ab.length}`); }
+  }
+  if (ab.length) report('efecto de habilidades', ab, 'a', 'en', 'e');
   await saveCache();
 }
 

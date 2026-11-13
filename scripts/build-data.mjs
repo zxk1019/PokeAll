@@ -518,6 +518,9 @@ for (const [id, n] of regionNames) regions[id] = n;
 // "src" guarda de qué web sale cada descripción para que la web lo diga.
 let extra = {};
 try { extra = JSON.parse(await readFile(join(ROOT, 'data-extra', 'texts.json'), 'utf8')); } catch { /* no hay */ }
+// Efecto detallado de las habilidades (a:<id>:e:<idioma>): lo escriben las wikis, no es texto del juego.
+// Va en su propio archivo (ability-effects.json), que solo se descarga al abrir una habilidad.
+const abilityEffects = {};
 {
   // p = Pokémon (nombre de la forma), r = regiones, l = lugares
   const byKind = Object.fromEntries(Object.entries({ s: species, a: abilities, m: moves, i: items, p: pokemon }).map(([k, arr]) => [k, new Map(arr.map(x => [x.id, x]))]));
@@ -529,6 +532,12 @@ try { extra = JSON.parse(await readFile(join(ROOT, 'data-extra', 'texts.json'), 
     if (places[kind]) {
       const names = places[kind][id];
       if (names && !names[lang]) { names[lang] = v[0]; filled++; }
+      continue;
+    }
+    if (kind === 'a' && field === 'e') {
+      if (!byKind.a.has(Number(id))) continue;
+      const e = (abilityEffects[id] ??= { src: {} });
+      e[lang] = v[0]; e.src[lang] = v[1]; filled++;
       continue;
     }
     const x = byKind[kind]?.get(Number(id));
@@ -543,6 +552,19 @@ try { extra = JSON.parse(await readFile(join(ROOT, 'data-extra', 'texts.json'), 
     filled++;
   }
   console.log(`Textos de otras webs: ${filled}`);
+  // Sin el de Pokémon Database, el "effect" en inglés de PokeAPI (más viejo, pero detallado)
+  for (const r of await csv('ability_prose')) {
+    const id = Number(r.ability_id), text = r.effect?.trim();
+    if (r.local_language_id !== '9' || !text || !byKind.a.has(id) || abilityEffects[id]?.en) continue;
+    const e = (abilityEffects[id] ??= { src: {} });
+    // Las tablas en markdown (Forewarn: "Power | Moves / ----: | ----- / 160 | ...") pasan a puntos "• 160: ..."
+    const table = p => /^[\s|:-]+$/m.test(p) && p.includes('|')
+      ? p.split('\n').filter(l => l.includes('|')).slice(1).filter(l => !/^[\s|:-]+$/.test(l))
+        .map(l => '• ' + l.split('|').map(c => c.trim()).filter(Boolean).join(': '))
+      : [p.replace(/\s+/g, ' ').trim()];
+    e.en = text.split(/\n\s*\n/).flatMap(table).filter(Boolean).join('\n');
+    e.src.en = 'api';
+  }
 }
 
 // ---------- lo que no tiene texto oficial ----------
@@ -597,6 +619,7 @@ await save('species', species);
 await save('pokemon', pokemon);
 await save('evolutions', evolutions);
 await save('abilities', abilities);
+await save('ability-effects', abilityEffects);
 await save('moves', moves);
 await save('items', items);
 await save('learnsets', learnsets);

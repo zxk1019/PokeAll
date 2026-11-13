@@ -6,7 +6,7 @@ export type Lang = 'zh' | 'en' | 'es';
 /** Texto en varios idiomas. Si falta uno, es que no está traducido. */
 export type L = Partial<Record<Lang, string>>;
 /** Web de la que sale una descripción que PokeAPI no trae (ver scripts/fill-missing.mjs) */
-export type Source = 'w52' | 'wdx' | 'pdb' | 'ser' | 'pcn' | 'pos';
+export type Source = 'w52' | 'wdx' | 'pdb' | 'ser' | 'pcn' | 'pos' | 'api';
 export type Src = Partial<Record<Lang, Source>>;
 
 export interface Pokemon {
@@ -133,3 +133,6 @@ function usePromise<T>(factory: () => Promise<T>): { data: T | null; error: stri
 
 export const useDb = () => usePromise(loadDb);
 export const useLearnsets = () => usePromise(() => loadJson<Learnsets>('learnsets'));
+/** Efecto detallado de cada habilidad (lo escriben las wikis): id -> textos por idioma, una línea por párrafo */
+export type AbilityEffect = L & { src: Src };
+export const useAbilityEffects = () => usePromise(() => loadJson<Record<string, AbilityEffect>>('ability-effects'));

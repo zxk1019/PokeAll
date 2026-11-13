@@ -6,8 +6,8 @@ import { SearchBox } from '../components/SearchBox';
 import { Artwork, Status, Types } from '../components/ui';
 import { dexNumber, randomInt } from '../lib/pokemon';
 
-/** Mismo Pokémon para todos durante el día */
-function dailySpecies(count: number): number {
+/** Especie del "Pokémon del día" de la portada (Daily.tsx la evita para que no destripe el secreto) */
+export function dailySpecies(count: number): number {
   const d = new Date();
   const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
   let h = seed;
@@ -49,7 +49,7 @@ export function Home() {
         <div className="section-grid">
           {NAV.map(item => (
             <Link key={item.path} to={item.path} className="card section-card">
-              <span className="section-icon" aria-hidden>{item.icon}</span>
+              <span className="section-icon" aria-hidden>{item.icon ?? ' '}</span>{/* sin icono, el hueco mantiene la tarjeta alineada */}
               <strong>{t(item.key)}</strong>
               <span className="muted small">{t(('home.' + item.path.slice(1)) as Key)}</span>
             </Link>

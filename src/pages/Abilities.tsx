@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
-import { useDb } from '../lib/data';
+import { useMemo, type ReactNode } from 'react';
+import { useAbilityEffects, useDb, type AbilityEffect } from '../lib/data';
 import { useI18n, type Key } from '../lib/i18n';
 import { Link, useQueryParam } from '../lib/router';
 import { search } from '../lib/search';
-import { Chips, Desc, NameTriple, PokemonChip, Section, Status } from '../components/ui';
+import { Chips, Desc, NameTriple, PokemonChip, SOURCES, Section, Status } from '../components/ui';
 
 export function AbilitiesPage() {
   const { data: db, error } = useDb();
@@ -89,6 +89,9 @@ export function AbilityPage({ id }: { id: number }) {
         </dl>
         {a.ex && <p className="note gold-note">★ {t(`ab.ex.${a.ex}.long` as Key)}</p>}
       </Section>
+      <Section title={t('ab.effect')}>
+        <EffectText id={id} />
+      </Section>
       <Section title={t('ab.holders')}>
         {holders.length === 0 && <p className="muted">{t('ab.none')}</p>}
         {normal.length > 0 && (
@@ -104,6 +107,43 @@ export function AbilityPage({ id }: { id: number }) {
           </>
         )}
       </Section>
+    </div>
+  );
+}
+
+/** Efecto detallado (de las wikis): "# título", "## etiqueta", "• punto" o un párrafo por línea */
+function EffectText({ id }: { id: number }) {
+  const { data: effects, error } = useAbilityEffects();
+  const { t, nl, lang } = useI18n();
+  if (!effects) return <Status error={error} />;
+  const e: AbilityEffect | undefined = effects[id];
+  const { src, ...texts } = e ?? { src: {} };
+  if (!Object.keys(texts).length) return <p className="muted">{t('ab.noEffect')}</p>;
+  const r = nl(texts);
+  const source = src[r.lang ?? lang];
+  const blocks: ReactNode[] = [];
+  let bullets: string[] = [];
+  const flush = () => {
+    if (bullets.length) blocks.push(<ul key={blocks.length}>{bullets.map((b, i) => <li key={i}>{b}</li>)}</ul>);
+    bullets = [];
+  };
+  for (const line of r.text.split('\n')) {
+    if (line.startsWith('• ')) { bullets.push(line.slice(2)); continue; }
+    flush();
+    if (line.startsWith('# ')) blocks.push(<h3 key={blocks.length}>{line.slice(2)}</h3>);
+    else if (line.startsWith('## ')) blocks.push(<p key={blocks.length} className="effect-label">{line.slice(3)}</p>);
+    else blocks.push(<p key={blocks.length}>{line}</p>);
+  }
+  flush();
+  return (
+    <div className="desc effect" lang={r.lang === 'zh' ? 'zh-Hans' : r.lang ?? undefined}>
+      {blocks}
+      {r.lang && r.lang !== lang && <p className="fallback-note">{t('fallbackNote', { lang: t(`lang.${r.lang}` as const) })}</p>}
+      {source && (
+        <p className="fallback-note">
+          {t('ab.effectBy')} <a href={SOURCES[source].url} target="_blank" rel="noreferrer">{SOURCES[source].name}</a>
+        </p>
+      )}
     </div>
   );
 }

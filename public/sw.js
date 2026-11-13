@@ -6,7 +6,7 @@ const CORE = `tridex-core-${VERSION}`;
 const IMAGES = 'tridex-images';
 const MAX_IMAGES = 2500;
 
-const DATA = ['meta', 'species', 'pokemon', 'evolutions', 'abilities', 'moves', 'items', 'learnsets', 'search']
+const DATA = ['meta', 'species', 'pokemon', 'evolutions', 'abilities', 'ability-effects', 'moves', 'items', 'learnsets', 'search']
   .map(name => `./data/${name}.json`);
 
 self.addEventListener('install', event => {

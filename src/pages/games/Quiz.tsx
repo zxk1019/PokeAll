@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { useDb } from '../lib/data';
-import { useI18n } from '../lib/i18n';
-import { Link } from '../lib/router';
-import { matchesName } from '../lib/search';
-import { useStored } from '../lib/storage';
-import { dexNumber, randomInt } from '../lib/pokemon';
-import { Artwork, NameTriple, Status, Types } from '../components/ui';
+import { useDb } from '../../lib/data';
+import { useI18n } from '../../lib/i18n';
+import { Link } from '../../lib/router';
+import { matchesName } from '../../lib/search';
+import { useStored } from '../../lib/storage';
+import { cryUrl, dexNumber, randomInt } from '../../lib/pokemon';
+import { Artwork, NameTriple, Status, Types } from '../../components/ui';
 
-export function QuizPage() {
+/** ¿Quién es ese Pokémon? por la silueta (shape) o por el grito (cry). */
+export function QuizPage({ mode = 'shape' }: { mode?: 'shape' | 'cry' }) {
   const { data: db, error } = useDb();
   const { t, n } = useI18n();
-  const [gens, setGens] = useStored<number[]>('quiz-gens', []); // vacío = todas
-  const [best, setBest] = useStored<number>('quiz-best', 0);
+  const prefix = mode === 'cry' ? 'cry' : 'quiz';
+  const [gens, setGens] = useStored<number[]>(prefix + '-gens', []); // vacío = todas
+  const [best, setBest] = useStored<number>(prefix + '-best', 0);
   const [streak, setStreak] = useState(0);
   const [currentId, setCurrentId] = useState<number | null>(null);
   const [answer, setAnswer] = useState('');
@@ -31,6 +33,21 @@ export function QuizPage() {
   useEffect(() => {
     if (currentId === null && pool.length) setCurrentId(pool[randomInt(pool.length)].id);
   }, [pool, currentId]);
+
+  // Modo grito: suena solo al cambiar de pregunta (si el navegador lo deja; si no, con el botón)
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const playCry = () => {
+    if (currentId === null) return;
+    audio.current?.pause();
+    audio.current = new Audio(cryUrl(currentId));
+    audio.current.volume = 0.6;
+    audio.current.play().catch(() => {});
+  };
+  useEffect(() => {
+    if (mode === 'cry' && currentId !== null) playCry();
+    return () => audio.current?.pause();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, currentId]);
 
   if (!db) return <Status error={error} />;
 
@@ -69,7 +86,8 @@ export function QuizPage() {
 
   return (
     <div className="page narrow">
-      <h1>{t('quiz.title')}</h1>
+      <p className="breadcrumb"><Link to="/games">{t('nav.games')}</Link></p>
+      <h1>{t(mode === 'cry' ? 'cry.title' : 'quiz.title')}</h1>
 
       <div className="filter-row wrap">
         <span className="filter-label">{t('quiz.gens')}</span>
@@ -86,9 +104,18 @@ export function QuizPage() {
           <span>{t('quiz.streak')}: <strong>{streak}</strong></span>
           <span>{t('quiz.best')}: <strong>{best}</strong></span>
         </div>
-        <div className={'quiz-art' + (revealed ? ' revealed' : '')}>
-          <Artwork id={p.id} silhouette={!revealed} size={260} alt={revealed ? n(p.n) : '?'} />
-        </div>
+        {mode === 'cry' && !revealed ? (
+          <div className="quiz-art">
+            <button type="button" className="cry-btn" onClick={playCry} aria-label={t('cry.play')}>
+              <span aria-hidden>🔊</span>
+              {t('cry.play')}
+            </button>
+          </div>
+        ) : (
+          <div className={'quiz-art' + (revealed ? ' revealed' : '')}>
+            <Artwork id={p.id} silhouette={!revealed} size={260} alt={revealed ? n(p.n) : '?'} />
+          </div>
+        )}
 
         {!revealed && hints > 0 && (
           <div className="quiz-hints">

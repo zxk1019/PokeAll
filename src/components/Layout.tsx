@@ -8,7 +8,7 @@ import { SOURCES } from './ui';
 
 type Theme = 'auto' | 'light' | 'dark';
 
-export const NAV: { path: string; key: Key; icon: string }[] = [
+export const NAV: { path: string; key: Key; icon?: string }[] = [
   { path: '/pokedex', key: 'nav.pokedex', icon: '◓' },
   { path: '/items', key: 'nav.items', icon: '🎒' },
   { path: '/abilities', key: 'nav.abilities', icon: '✦' },
@@ -18,11 +18,11 @@ export const NAV: { path: string; key: Key; icon: string }[] = [
   { path: '/translator', key: 'nav.translator', icon: '文' },
   { path: '/compare', key: 'nav.compare', icon: '⇄' },
   { path: '/team', key: 'nav.team', icon: '⬡' },
-  { path: '/quiz', key: 'nav.quiz', icon: '?' },
+  { path: '/games', key: 'nav.games', icon: '🎮' },
   { path: '/favorites', key: 'nav.favorites', icon: '★' },
 ];
 
-const SECTION_OF: Record<string, string> = { pokemon: '/pokedex', item: '/items', ability: '/abilities', move: '/moves' };
+const SECTION_OF: Record<string, string> = { pokemon: '/pokedex', item: '/items', ability: '/abilities', move: '/moves', quiz: '/games', cry: '/games', 'higher-lower': '/games', 'type-quiz': '/games', daily: '/games' };
 
 export function Layout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useI18n();
@@ -68,7 +68,7 @@ export function Layout({ children }: { children: ReactNode }) {
           <div className="mainnav-inner">
             {NAV.map(item => (
               <Link key={item.path} to={item.path} className={activePath === item.path ? 'active' : ''} aria-current={activePath === item.path ? 'page' : undefined}>
-                <span aria-hidden className="nav-icon">{item.icon}</span> {t(item.key)}
+                {item.icon && <><span aria-hidden className="nav-icon">{item.icon}</span> </>}{t(item.key)}
               </Link>
             ))}
           </div>
@@ -80,7 +80,7 @@ export function Layout({ children }: { children: ReactNode }) {
         {db && <p className="muted small">{t('dataDate', { date: db.meta.generated })} · <a href="https://pokeapi.co" target="_blank" rel="noreferrer">pokeapi.co</a></p>}
         <p className="muted small">
           {t('footerTexts')}{' '}
-          {Object.values(SOURCES).map((s, i) => (
+          {Object.entries(SOURCES).filter(([k]) => k !== 'api').map(([, s], i) => (
             <span key={s.url}>
               {i > 0 && ' · '}<a href={s.url} target="_blank" rel="noreferrer">{s.name}</a>
               {s.cc && <> (<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noreferrer">CC BY-NC-SA</a>)</>}

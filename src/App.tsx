@@ -13,7 +13,11 @@ import { NaturesPage } from './pages/Natures';
 import { TranslatorPage } from './pages/Translator';
 import { ComparePage } from './pages/Compare';
 import { TeamPage } from './pages/Team';
-import { QuizPage } from './pages/Quiz';
+import { QuizPage } from './pages/games/Quiz';
+import { GamesPage } from './pages/games/Games';
+import { HigherLowerPage } from './pages/games/HigherLower';
+import { TypeQuizPage } from './pages/games/TypeQuiz';
+import { DailyPage } from './pages/games/Daily';
 import { FavoritesPage } from './pages/Favorites';
 import { SearchPage } from './pages/SearchPage';
 
@@ -47,7 +51,12 @@ function Route() {
     case 'translator': return <TranslatorPage />;
     case 'compare': return <ComparePage />;
     case 'team': return <TeamPage />;
+    case 'games': return <GamesPage />;
     case 'quiz': return <QuizPage />;
+    case 'cry': return <QuizPage key="cry" mode="cry" />;
+    case 'higher-lower': return <HigherLowerPage />;
+    case 'type-quiz': return <TypeQuizPage />;
+    case 'daily': return <DailyPage />;
     case 'favorites': return <FavoritesPage />;
     case 'search': return <SearchPage />;
     default: return <NotFound />;

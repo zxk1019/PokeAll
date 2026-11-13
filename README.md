@@ -9,14 +9,14 @@ Web de información Pokémon en chino (simplificado), inglés y español. Se pue
 - **Pokédex**: las 1025 especies y sus formas (Mega, Gigamax, regionales…), con filtros por generación, tipo y categoría y orden por estadísticas.
 - **Ficha de cada Pokémon**: nombres en los 3 idiomas (con pinyin), descripción, datos, habilidades, estadísticas, debilidades, árbol de evolución con sus condiciones, movimientos que aprende, objetos que lleva en estado salvaje, versión variocolor y su grito.
 - **Objetos**: lo que hace cada uno, a quién hace evolucionar, qué movimiento enseña cada MT y quién lo lleva en estado salvaje.
-- **Habilidades**: incluidas las **exclusivas** (de un solo Pokémon o de una sola línea evolutiva), separando las normales de las ocultas.
+- **Habilidades**: incluidas las **exclusivas** (de un solo Pokémon o de una sola línea evolutiva), separando las normales de las ocultas, con el **efecto detallado** (números, excepciones, cambios por generación).
 - **Movimientos**: tipo, clase, potencia, precisión, PP y qué Pokémon los aprenden.
 - **Tipos**: tabla de tipos y calculadora de debilidades para uno o dos tipos.
 - **Naturalezas**: qué estadística sube y cuál baja, y qué sabores le gustan.
 - **Traductor**: escribe cualquier nombre y te lo da en los 3 idiomas (con botón de copiar).
 - **Comparar**: hasta 4 Pokémon lado a lado.
 - **Equipo**: 6 Pokémon con su cobertura defensiva y ofensiva; se puede compartir con un enlace.
-- **¿Quién es ese Pokémon?**: adivinar por la silueta, contestando en cualquier idioma o en pinyin.
+- **Minijuegos**: «¿Quién es ese Pokémon?» (por la silueta, contestando en cualquier idioma o en pinyin), «¿De quién es este grito?», «¿Cuál tiene más?» (estadísticas, peso y altura), «Eficacia de tipos» y «Pokémon secreto» (uno al día, el mismo para todos, con pistas).
 - **Favoritos**, modo claro/oscuro y buscador global.
 
 El buscador encuentra cosas en cualquier idioma, sin tildes, en pinyin (`pikaqiu` o `pkq`), por número (`#25`) y con erratas leves (`charmandr`).
@@ -57,7 +57,7 @@ PokeAPI no trae muchas descripciones de los juegos nuevos (sobre todo de Escarla
 | Español | [WikiDex](https://www.wikidex.net) y, si no está, [Pokéos](https://www.pokeos.com) y la [Pokédex oficial](https://www.pokemon.com/es/pokedex) | CC BY-NC-SA 3.0 |
 | Inglés | [Pokémon Database](https://pokemondb.net) y [Serebii](https://www.serebii.net) | — |
 
-Solo se usan textos y nombres oficiales de los juegos. No se usan filtraciones, ni traducciones hechas por las wikis (en chino solo cuentan los juegos que salieron en chino, desde Sol/Luna), ni textos deducidos. Lo que nunca salió en un juego en chino no está en la web: 39 objetos de la 3.ª y 4.ª generación (cartas, Pase Tri, MO08...) y la región de Orre. Si algo aún no es oficial, como las habilidades de algunas megaevoluciones nuevas, la web lo dice en vez de inventárselo.
+Solo se usan textos y nombres oficiales de los juegos. No se usan filtraciones, ni traducciones hechas por las wikis (en chino solo cuentan los juegos que salieron en chino, desde Sol/Luna), ni textos deducidos. Lo que nunca salió en un juego en chino no está en la web: 39 objetos de la 3.ª y 4.ª generación (cartas, Pase Tri, MO08...) y la región de Orre. El efecto detallado de las habilidades es la excepción: no es texto del juego sino la explicación que escriben 52poké (chino), WikiDex (español) y Pokémon Database o PokeAPI (inglés), y la web dice de dónde sale. Si algo aún no es oficial, como las habilidades de algunas megaevoluciones nuevas, la web lo dice en vez de inventárselo.
 
 Lo que encuentra se guarda en `data-extra/texts.json` (este sí se sube a git) y `build-data.mjs` lo usa solo para rellenar huecos: lo que trae PokeAPI siempre gana. En la web, debajo de esos textos sale de qué página vienen.
 
@@ -80,7 +80,8 @@ No hace falta tocar nada para que los móviles que ya tienen la app descarguen l
 | Buscador | Propio (`src/lib/search.ts`) | Para que entienda pinyin, chino, tildes y erratas a la vez. |
 | "Backend" | Script de Node que genera los JSON | Los datos de Pokémon casi no cambian, así que no hace falta un servidor: la web es estática, rápida y gratis de publicar. |
 | Sin internet | Service worker propio (`public/sw.js`) | Guarda la web, los datos y las imágenes. |
-| Guardado | `localStorage` | Favoritos, equipo, idioma, tema y récord del quiz. |
+| Guardado | `localStorage` | Favoritos, equipo, idioma, tema y récords y rachas de los minijuegos. |
+| Publicación | GitHub Actions + GitHub Pages | Cada push a `main` compila y publica la web sola. |
 
 ### ¿Y si me piden un backend de verdad?
 
@@ -92,22 +93,30 @@ La web no lo necesita, pero si en clase piden servidor y base de datos, lo más 
 
 ## Publicarla
 
+Se publica sola: cada push a `main` lanza `.github/workflows/deploy.yml`, que hace `npm ci` y `npm run build` y sube `dist/` a GitHub Pages. Se puede ver cómo va en la pestaña **Actions** del repositorio.
+
+Los JSON de `public/data/` no se generan en GitHub (tardaría mucho y depende de otras webs), así que si cambian los datos hay que subirlos también.
+
+Para publicarla en otro sitio (Netlify, Vercel, Cloudflare Pages…):
+
 ```bash
 npm run build
 ```
 
-Sube la carpeta `dist/` a GitHub Pages, Netlify, Vercel o Cloudflare Pages. Como usa rutas relativas y `#`, funciona en cualquier carpeta.
+y subir la carpeta `dist/`. Como usa rutas relativas y `#`, funciona en cualquier carpeta.
 
 ## Estructura
 
 ```
-scripts/            descarga y conversión de datos
+.github/workflows/  publicación automática en GitHub Pages
+scripts/            descarga y conversión de datos, versión de la caché
 data-extra/         textos sacados de otras webs (los que faltan en PokeAPI)
 public/data/        JSON generados (los usa la web)
 public/sw.js        service worker (modo sin internet)
 src/lib/            datos, buscador, idiomas, router, guardado
 src/components/     piezas reutilizables (cabecera, buscador, evolución…)
 src/pages/          una página por sección
+src/pages/games/    los minijuegos (uno por archivo, y la lista en Games.tsx)
 ```
 
 ## Ideas para más adelante
