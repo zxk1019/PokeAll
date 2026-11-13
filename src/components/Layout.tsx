@@ -2,9 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { useI18n, LANGS, LANG_LABEL, type Key } from '../lib/i18n';
 import { Link, useLocation } from '../lib/router';
 import { useStored } from '../lib/storage';
-import { useDb } from '../lib/data';
 import { SearchBox } from './SearchBox';
-import { SOURCES } from './ui';
 
 type Theme = 'auto' | 'light' | 'dark';
 
@@ -27,7 +25,6 @@ const SECTION_OF: Record<string, string> = { pokemon: '/pokedex', item: '/items'
 export function Layout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useI18n();
   const { parts } = useLocation();
-  const { data: db } = useDb();
   const [theme, setTheme] = useStored<Theme>('theme', 'auto');
 
   useEffect(() => {
@@ -77,16 +74,6 @@ export function Layout({ children }: { children: ReactNode }) {
       <main id="main" tabIndex={-1}>{children}</main>
       <footer className="footer">
         <p>{t('footer')}</p>
-        {db && <p className="muted small">{t('dataDate', { date: db.meta.generated })} · <a href="https://pokeapi.co" target="_blank" rel="noreferrer">pokeapi.co</a></p>}
-        <p className="muted small">
-          {t('footerTexts')}{' '}
-          {Object.entries(SOURCES).filter(([k]) => k !== 'api').map(([, s], i) => (
-            <span key={s.url}>
-              {i > 0 && ' · '}<a href={s.url} target="_blank" rel="noreferrer">{s.name}</a>
-              {s.cc && <> (<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noreferrer">CC BY-NC-SA</a>)</>}
-            </span>
-          ))}
-        </p>
       </footer>
     </>
   );

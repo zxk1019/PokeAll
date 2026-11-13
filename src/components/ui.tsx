@@ -125,6 +125,17 @@ export const SOURCES: Record<Source, { name: string; url: string; cc?: true }> =
   api: { name: 'PokeAPI', url: 'https://pokeapi.co' },
 };
 
+/** Enlace a la web de un texto; las wikis CC BY-NC-SA piden citar también la licencia, así que va al lado. */
+export function SourceLink({ source }: { source: Source }) {
+  const s = SOURCES[source];
+  return (
+    <>
+      <a href={s.url} target="_blank" rel="noreferrer">{s.name}</a>
+      {s.cc && <> (<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noreferrer">CC BY-NC-SA 3.0</a>)</>}
+    </>
+  );
+}
+
 export function Desc({ text, src }: { text: L | undefined; src?: Src }) {
   const { nl, t, lang } = useI18n();
   if (!text || !Object.keys(text).length) return <p className="muted">{t('noDescription')}</p>;
@@ -136,7 +147,7 @@ export function Desc({ text, src }: { text: L | undefined; src?: Src }) {
       {r.lang && r.lang !== lang && <p className="fallback-note">{t('fallbackNote', { lang: t(`lang.${r.lang}` as const) })}</p>}
       {source && (
         <p className="fallback-note">
-          {t('sourceNote')} <a href={SOURCES[source].url} target="_blank" rel="noreferrer">{SOURCES[source].name}</a>
+          {t('sourceNote')} <SourceLink source={source} />
         </p>
       )}
     </div>

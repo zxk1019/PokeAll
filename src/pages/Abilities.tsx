@@ -3,7 +3,7 @@ import { useAbilityEffects, useDb, type AbilityEffect } from '../lib/data';
 import { useI18n, type Key } from '../lib/i18n';
 import { Link, useQueryParam } from '../lib/router';
 import { search } from '../lib/search';
-import { Chips, Desc, NameTriple, PokemonChip, SOURCES, Section, Status } from '../components/ui';
+import { Chips, Desc, NameTriple, PokemonChip, Section, SourceLink, Status } from '../components/ui';
 
 export function AbilitiesPage() {
   const { data: db, error } = useDb();
@@ -141,7 +141,7 @@ function EffectText({ id }: { id: number }) {
       {r.lang && r.lang !== lang && <p className="fallback-note">{t('fallbackNote', { lang: t(`lang.${r.lang}` as const) })}</p>}
       {source && (
         <p className="fallback-note">
-          {t('ab.effectBy')} <a href={SOURCES[source].url} target="_blank" rel="noreferrer">{SOURCES[source].name}</a>
+          {t('ab.effectBy')} <SourceLink source={source} />
         </p>
       )}
     </div>
