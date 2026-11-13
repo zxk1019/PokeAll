@@ -31,15 +31,31 @@ export function TypesPage() {
   return (
     <div className="page">
       <h1>{t('ty.title')}</h1>
-      <p className="muted">{t('ty.clickHint')}</p>
+      <p className="muted">{t('ty.howTo')} {t('ty.clickHint')}</p>
 
-      <div className="card flush type-chart-wrap">
+      <div className="card type-chart-card">
+        {/* Qué significa cada color */}
+        <div className="ty-legend">
+          {([[2, 'f2', 'ty.f2'], [0.5, 'f05', 'ty.f05'], [0, 'f0', 'ty.f0'], [1, 'f1', 'ty.f1']] as const).map(([m, cls, key]) => (
+            <span key={cls} className="ty-legend-item">
+              <span className={'ty-swatch ' + cls}>{m === 1 ? '' : multLabel(m)}</span>{t(key)} ×{multLabel(m)}
+            </span>
+          ))}
+        </div>
+        {/* La casilla señalada, explicada con palabras */}
+        <p className="ty-readout" aria-live="polite">
+          {hover ? (() => {
+            const f = eff[hover[0] - 1][hover[1] - 1];
+            return <><TypeBadge id={hover[0]} small link={false} /> → <TypeBadge id={hover[1]} small link={false} /> · <strong>{t(`ty.f${String(f).replace('.', '')}` as 'ty.f2')} ×{multLabel(f)}</strong></>;
+          })() : <span className="muted">{t('ty.hoverHint')}</span>}
+        </p>
+        <div className="type-chart-wrap">
         <table className="type-chart" onMouseLeave={() => setHover(null)}>
           <thead>
             <tr>
               <th className="corner">{t('ty.corner')}</th>
               {types.map(d => (
-                <th key={d.id} className={hover?.[1] === d.id ? 'hl' : ''}>
+                <th key={d.id} className={hover?.[1] === d.id ? 'hl' : ''} scope="col">
                   <button className={`type-head t-${typeSlug(d.id)}` + (sel === d.id ? ' active' : '')} onClick={() => setSel(sel === d.id ? '' : String(d.id))} title={n(d.n)}>
                     {n(d.n).slice(0, 3)}
                   </button>
@@ -63,6 +79,7 @@ export function TypesPage() {
                       key={d.id}
                       className={`f${String(f).replace('.', '')}` + (hover?.[1] === d.id ? ' hl' : '') + (isSel ? ' sel' : '')}
                       onMouseEnter={() => setHover([a.id, d.id])}
+                      onClick={() => setHover([a.id, d.id])}
                       title={`${n(a.n)} → ${n(d.n)}: ×${multLabel(f)}`}
                     >
                       {f === 1 ? '' : multLabel(f)}
@@ -73,6 +90,7 @@ export function TypesPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {sel > 0 && (

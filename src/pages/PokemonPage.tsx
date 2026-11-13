@@ -37,6 +37,7 @@ export function Weaknesses({ db, types }: { db: Db; types: number[] }) {
       {groups.map(g => (
         <div key={g.m} className={'weak-row m' + String(g.m).replace('.', '')}>
           <span className="mult">×{multLabel(g.m)}</span>
+          <span className="weak-label">{t(g.m > 1 ? 'ty.weakTo' : g.m > 0 ? 'ty.resists' : 'ty.immune')}</span>
           <span className="types">{g.types.map(id => <TypeBadge key={id} id={id} small />)}</span>
         </div>
       ))}

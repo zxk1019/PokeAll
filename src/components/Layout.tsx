@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useI18n, LANGS, LANG_LABEL, type Key } from '../lib/i18n';
 import { Link, useLocation } from '../lib/router';
 import { useStored } from '../lib/storage';
@@ -33,6 +33,18 @@ export function Layout({ children }: { children: ReactNode }) {
     else root.setAttribute('data-theme', theme);
   }, [theme]);
 
+  // Altura de la cabecera fija en --header-h, para lo que se pega debajo al hacer scroll (la explicación de la tabla de tipos)
+  const header = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = header.current;
+    if (!el) return;
+    const set = () => document.documentElement.style.setProperty('--header-h', el.offsetHeight + 'px');
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const current = '/' + (parts[0] ?? '');
   const activePath = SECTION_OF[parts[0] ?? ''] ?? current;
   const nextTheme: Record<Theme, Theme> = { auto: 'light', light: 'dark', dark: 'auto' };
@@ -41,7 +53,7 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <>
       <a href="#main" className="skip-link" onClick={e => { e.preventDefault(); document.getElementById('main')?.focus(); }}>↓</a>
-      <header className="topbar">
+      <header className="topbar" ref={header}>
         <div className="topbar-inner">
           <Link to="/" className="logo" aria-label={t('nav.home')}>
             <span className="logo-ball" aria-hidden />
