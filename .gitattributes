@@ -1,0 +1,7 @@
+# Todo con saltos de línea LF (así Windows no avisa de LF/CRLF)
+* text=auto eol=lf
+*.svg text eol=lf
+
+# Los JSON generados no se comparan línea a línea en GitHub
+public/data/*.json linguist-generated=true -diff
+data-extra/texts.json -diff
